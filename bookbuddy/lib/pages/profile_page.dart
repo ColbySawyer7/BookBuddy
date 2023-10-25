@@ -16,8 +16,6 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
         children: [Text("Your Library")],
       )),
-      bottomNavigationBar: BottomNavBar(),
     );
-    ;
   }
 }

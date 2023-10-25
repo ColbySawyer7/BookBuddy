@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class Book extends StatelessWidget {
+class BookWidget extends StatelessWidget {
   final String imageURL;
 
-  const Book({super.key, required this.imageURL});
+  const BookWidget({super.key, required this.imageURL});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +23,7 @@ class Book extends StatelessWidget {
               ? ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: FadeInImage.assetNetwork(
-                    placeholder: "",
+                    placeholder: 'lib/assets/noCover.png',
                     image: imageURL,
                     fit: BoxFit.cover,
                   ),

@@ -18,7 +18,7 @@ class AuthenticationWrapper extends StatelessWidget {
         if (snapshot.hasData && snapshot.data != null) {
           // Set the Firebase user in the UserModel
           userModel.firebaseUser = snapshot.data;
-          context.read<UserModel>().fetchUserData(snapshot.data!.uid);
+          context.read<UserModel>().fetchUserData(context);
 
           // Return the main app's home page
           return HomePage();

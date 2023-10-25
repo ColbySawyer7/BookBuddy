@@ -61,7 +61,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
             setState(() {
               _selectedIndex = index;
             });
-            Navigator.pushNamed(context, routes[index]);
+            //Navigator.pushNamed(context, routes[index]);
           },
           tabs: [
             GButton(

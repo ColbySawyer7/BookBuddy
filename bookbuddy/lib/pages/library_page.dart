@@ -16,7 +16,6 @@ class _LibraryPageState extends State<LibraryPage> {
           child: Column(
         children: [Text("Your Library")],
       )),
-      bottomNavigationBar: BottomNavBar(),
     );
   }
 }

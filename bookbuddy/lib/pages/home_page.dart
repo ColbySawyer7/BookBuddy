@@ -1,7 +1,11 @@
 import 'package:bookbuddy/components/book.dart';
 import 'package:bookbuddy/components/book_footer.dart';
-import 'package:bookbuddy/components/bottom_nav_bar.dart';
+import 'package:bookbuddy/models/book_model.dart';
 import 'package:bookbuddy/models/user_model.dart';
+import 'package:bookbuddy/pages/clubs_page.dart';
+import 'package:bookbuddy/pages/landing_page.dart';
+import 'package:bookbuddy/pages/library_page.dart';
+import 'package:bookbuddy/pages/profile_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,32 +22,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  var recs = [
-    "https://covers.openlibrary.org/b/olid/OL28944960M-L.jpg",
-    "https://m.media-amazon.com/images/I/91aCox8y3rL._SL1500_.jpg",
-    "https://m.media-amazon.com/images/I/51IrW578SQL._SY300_.jpg",
-    "https://m.media-amazon.com/images/I/51KHidbIlRL._SY300_.jpg",
-    "https://m.media-amazon.com/images/I/51Ck0yr+jrL._SY300_.jpg",
-    "https://m.media-amazon.com/images/I/51iCNetZNeL._SY300_.jpg",
-    "https://m.media-amazon.com/images/I/519TilmNL+L._SY300_.jpg",
-    "https://m.media-amazon.com/images/I/51JwQT+XVCL._SY300_.jpg",
+  int _selectedIndex = 0; // By default, the first tab is selected
+  final List<Widget> _pages = [
+    LandingPage(),
+    ClubsPage(),
+    LibraryPage(),
+    ProfilePage()
   ];
 
-  var library = [];
-
-  void fetchLibrary() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      setState(() {
-        library = userData['library'];
-      });
-    }
-    print("Library: " + library.toString());
-  }
+  // Provider Models
+  late UserModel userModel;
 
   Future<void> signOut() async {
     await FirebaseAuth.instance.signOut();
@@ -52,145 +40,104 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    fetchLibrary();
+    userModel = context.read<UserModel>();
   }
 
   @override
   Widget build(BuildContext context) {
-    final userModel = context.watch<UserModel>();
+    // Data extracted from models
     final username = userModel.name ?? 'Default Name';
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(username),
-        actions: <Widget>[
-          // The sign-out button
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () async {
-              await signOut();
 
-              // Optionally, navigate to another page after signing out
-              // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
-            },
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 15),
-                child: Container(
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Row(
-                      children: [
-                        FaIcon(FontAwesomeIcons.magnifyingGlass,
-                            size: 18, color: Colors.blue),
-                        SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              labelText: 'Search',
-                            ),
+    return FutureBuilder<void>(
+      future: userModel.dataReady,
+      builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        if (snapshot.connectionState == ConnectionState.done) {
+          final username = userModel.name ?? 'Default Name';
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Welcome, ' + username),
+              actions: <Widget>[
+                // The sign-out button
+                IconButton(
+                  icon: Icon(Icons.logout),
+                  onPressed: () async {
+                    await signOut();
+
+                    // Optionally, navigate to another page after signing out
+                    // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginPage()));
+                  },
+                ),
+              ],
+            ),
+            body: Stack(
+              children: _pages
+                  .asMap()
+                  .map((index, page) {
+                    // For each page, create a visibility controlled widget
+                    return MapEntry(
+                        index,
+                        Offstage(
+                          offstage: _selectedIndex != index,
+                          child: TickerMode(
+                            enabled: _selectedIndex == index,
+                            child: page,
                           ),
-                        ),
-                        SizedBox(width: 10),
-                        FaIcon(FontAwesomeIcons.sliders,
-                            size: 18, color: Colors.blue)
-                      ],
+                        ));
+                  })
+                  .values
+                  .toList(),
+            ),
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(color: Colors.white, boxShadow: [
+                BoxShadow(blurRadius: 20, color: Colors.black.withOpacity(.1))
+              ]),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                child: GNav(
+                  rippleColor: Colors.grey[300]!,
+                  hoverColor: Colors.grey[100]!,
+                  gap: 8,
+                  activeColor: Colors.blue,
+                  iconSize: 24,
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  duration: Duration(milliseconds: 400),
+                  tabBackgroundColor: Colors.grey[100]!,
+                  color: Colors.black,
+                  selectedIndex: _selectedIndex,
+                  onTabChange: (index) {
+                    setState(() {
+                      _selectedIndex = index;
+                    });
+                    //Navigator.pushNamed(context, routes[index]);
+                  },
+                  tabs: [
+                    GButton(
+                      icon: FontAwesomeIcons.house,
+                      text: 'Home',
                     ),
-                  ),
+                    GButton(
+                      icon: FontAwesomeIcons.userGroup,
+                      text: 'Clubs',
+                    ),
+                    GButton(
+                      icon: FontAwesomeIcons.bookOpen,
+                      text: 'Library',
+                    ),
+                    GButton(
+                      icon: FontAwesomeIcons.person,
+                      text: 'Profile',
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 20),
-              Text(
-                "Recommendations",
-                style: GoogleFonts.montserrat(
-                    textStyle:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 20),
-              Container(
-                height: 200,
-                child: recs.isNotEmpty
-                    ? ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: recs.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Book(
-                              imageURL: recs[index],
-                            ),
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Text(
-                          "Your library is currently empty",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-              ),
-              SizedBox(height: 20),
-              Text(
-                "Your Library",
-                style: GoogleFonts.montserrat(
-                    textStyle:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              ),
-              SizedBox(height: 20),
-              Container(
-                height: 275,
-                child: library.isNotEmpty
-                    ? ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: library.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                Book(
-                                  imageURL: library[index][2],
-                                ),
-                                SizedBox(height: 6),
-                                Expanded(
-                                  child: BookFooter(
-                                    title: library[index][0],
-                                    author: library[index][1],
-                                  ),
-                                )
-                              ],
-                            ),
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Text(
-                          "Your library is currently empty",
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: BottomNavBar(),
+            ),
+          );
+        } else {
+          // While data is still loading:
+          return const CircularProgressIndicator();
+        }
+      },
     );
   }
 }

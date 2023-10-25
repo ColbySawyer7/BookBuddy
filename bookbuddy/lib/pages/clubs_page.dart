@@ -16,7 +16,6 @@ class _ClubsPageState extends State<ClubsPage> {
           child: Column(
         children: [Text("Your Library")],
       )),
-      bottomNavigationBar: BottomNavBar(),
     );
     ;
   }
