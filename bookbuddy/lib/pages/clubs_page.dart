@@ -1,22 +1,36 @@
-import 'package:bookbuddy/components/bottom_nav_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:bookbuddy/models/user_model.dart';
+import 'package:bookbuddy/components/club.dart';
+import 'package:bookbuddy/models/club_model.dart';
 
-class ClubsPage extends StatefulWidget {
-  const ClubsPage({super.key});
-
-  @override
-  State<ClubsPage> createState() => _ClubsPageState();
-}
-
-class _ClubsPageState extends State<ClubsPage> {
+class ClubsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: const SafeArea(
-          child: Column(
-        children: [Text("Your Library")],
-      )),
+    final userModel = Provider.of<UserModel>(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('My Clubs'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: userModel.clubs.isNotEmpty
+            ? ListView.builder(
+                itemCount: userModel.clubs.length,
+                itemBuilder: (context, index) {
+                  return ClubWidget(
+                    club: userModel.clubs[index],
+                  );
+                },
+              )
+            : Center(
+                child: Text(
+                  'You are not in any clubs yet.',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+      ),
     );
-    ;
   }
 }

@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:bookbuddy/models/club_model.dart';
 import 'package:bookbuddy/models/book_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:bookbuddy/components/club.dart';
 
 class UserModel extends ChangeNotifier {
   User? _firebaseUser;
@@ -20,7 +21,11 @@ class UserModel extends ChangeNotifier {
 
   // Your user attributes, e.g., name, profile picture, etc.
   String? name;
+  String? email;
+  String? bio;
   List<String>? library;
+  List<String>? clubIDs = [];
+  List<Club> clubs = [];
 
   final _dataCompleter = Completer<void>();
   Future<void> get dataReady => _dataCompleter.future;
@@ -87,9 +92,14 @@ class UserModel extends ChangeNotifier {
 
     // Set your user attributes here
     name = userDoc.data()?['name'] ?? '';
+    email = userDoc.data()?['email'] ?? '';
+    bio = userDoc.data()?['bio'] ?? '';
 
     // Fetch the user's library
     fetchLibrary(context);
+
+    // Fetch the list of Club IDs associated with the user
+    fetchClubs(context);
 
     // Update user latest login information
     updateUserData();
@@ -99,6 +109,26 @@ class UserModel extends ChangeNotifier {
     // Once everything is set:
     if (!_dataCompleter.isCompleted) {
       _dataCompleter.complete();
+    }
+  }
+
+  Future<void> fetchClubs(BuildContext context) async {
+    try {
+      var userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_firebaseUser?.uid)
+          .get();
+
+      clubIDs = List<String>.from(userDoc.data()?['joinedClubs'] ?? []);
+
+      clubIDs?.forEach((clubID) async {
+        final club = await Club.fetchClub(clubID);
+        clubs.add(club);
+      });
+
+      notifyListeners();
+    } catch (error) {
+      print("Error fetching club IDs: $error");
     }
   }
 }

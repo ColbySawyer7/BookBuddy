@@ -23,12 +23,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0; // By default, the first tab is selected
-  final List<Widget> _pages = [
-    LandingPage(),
-    ClubsPage(),
-    LibraryPage(),
-    ProfilePage()
-  ];
+  final List<Widget> _pages = [LandingPage(), ClubsPage(), ProfilePage()];
 
   // Provider Models
   late UserModel userModel;
@@ -119,10 +114,6 @@ class _HomePageState extends State<HomePage> {
                     GButton(
                       icon: FontAwesomeIcons.userGroup,
                       text: 'Clubs',
-                    ),
-                    GButton(
-                      icon: FontAwesomeIcons.bookOpen,
-                      text: 'Library',
                     ),
                     GButton(
                       icon: FontAwesomeIcons.person,

@@ -28,7 +28,6 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (context) => BookModel()),
         ChangeNotifierProvider(create: (context) => UserModel()),
-        ChangeNotifierProvider(create: (context) => ClubModel()),
       ],
       child: const MaterialApp(
         debugShowCheckedModeBanner: false,
