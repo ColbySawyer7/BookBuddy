@@ -47,22 +47,14 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userModel = Provider.of<UserModel>(context);
     final bookModel = Provider.of<BookModel>(context);
-    final library = bookModel.currentlyReading;
+    final library = bookModel.currentlyReading + bookModel.readBooks;
 
-    var recs = [
-      "https://covers.openlibrary.org/b/olid/OL28944960M-L.jpg",
-      "https://m.media-amazon.com/images/I/91aCox8y3rL._SL1500_.jpg",
-      "https://m.media-amazon.com/images/I/51IrW578SQL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51KHidbIlRL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51Ck0yr+jrL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51iCNetZNeL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/519TilmNL+L._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51JwQT+XVCL._SY300_.jpg",
-    ];
+    final List<Book> recs = userModel.highlightedPicks;
 
-    return SafeArea(
-      child: SingleChildScrollView(
+    return Consumer<UserModel>(builder: (context, userModel, child) {
+      return SingleChildScrollView(
         child: Column(
           children: [
             SizedBox(height: 20),
@@ -115,7 +107,10 @@ class _LandingPageState extends State<LandingPage> {
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: BookWidget(
-                            imageURL: recs[index],
+                            imageURL: recs[index].coverImage,
+                            isRead: false,
+                            canBeRead: false,
+                            isbn: recs[index].isbn,
                           ),
                         );
                       },
@@ -165,6 +160,8 @@ class _LandingPageState extends State<LandingPage> {
                             children: [
                               BookWidget(
                                 imageURL: library[index].coverImage,
+                                isRead: library[index].isRead,
+                                isbn: library[index].isbn,
                               ),
                               SizedBox(height: 6),
                               Expanded(
@@ -190,7 +187,7 @@ class _LandingPageState extends State<LandingPage> {
             ),
           ],
         ),
-      ),
-    );
+      );
+    });
   }
 }

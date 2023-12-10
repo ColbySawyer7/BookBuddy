@@ -24,6 +24,7 @@ class UserModel extends ChangeNotifier {
   String? email;
   String? bio;
   List<String>? library;
+  List<String>? readBooks;
   List<String>? clubIDs = [];
   List<Club> clubs = [];
   List<Book> highlightedPicks = [];
@@ -74,13 +75,16 @@ class UserModel extends ChangeNotifier {
           .collection('users')
           .doc(_firebaseUser?.uid)
           .get();
-      List<String> isbns = List<String>.from(userDoc.data()?['lib'] ?? []);
+      List<String> lib = List<String>.from(userDoc.data()?['lib'] ?? []);
+      List<String> readBooks =
+          List<String>.from(userDoc.data()?['readBooks'] ?? []);
 
       // A list to store fetched books
-      List<Book> fetchedBooks = [];
+      List<Book> fetchedLibraryBooks = [];
+      List<Book> fetchedReadBooks = [];
 
-      // For each ISBN, fetch the book data
-      for (String isbn in isbns) {
+      // For each ISBN, fetch the book data (Library)
+      for (String isbn in lib) {
         final response = await http.get(
           Uri.parse(
               'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data'),
@@ -93,17 +97,44 @@ class UserModel extends ChangeNotifier {
           String author = bookData['authors'] != null
               ? bookData['authors'][0]['name']
               : ''; // Assuming the first author in the list
-          fetchedBooks.add(Book(
+          fetchedLibraryBooks.add(Book(
               isbn: isbn,
               author: author,
               title: title,
-              coverImage: 'https://covers.openlibrary.org/b/isbn/$isbn-L.jpg'));
+              coverImage: 'https://covers.openlibrary.org/b/isbn/$isbn-L.jpg',
+              isRead: false));
+        } else {
+          print("Failed to fetch book with ISBN: $isbn");
+        }
+      }
+
+      // For each ISBN, fetch the book data (Read Books)
+      for (String isbn in readBooks) {
+        final response = await http.get(
+          Uri.parse(
+              'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data'),
+        );
+        if (response.statusCode == 200) {
+          var jsonData = json.decode(response.body);
+          var bookData = jsonData['ISBN:$isbn'];
+
+          String title = bookData['title'] ?? '';
+          String author = bookData['authors'] != null
+              ? bookData['authors'][0]['name']
+              : ''; // Assuming the first author in the list
+          fetchedReadBooks.add(Book(
+              isbn: isbn,
+              author: author,
+              title: title,
+              coverImage: 'https://covers.openlibrary.org/b/isbn/$isbn-L.jpg',
+              isRead: true));
         } else {
           print("Failed to fetch book with ISBN: $isbn");
         }
       }
       // Update the BookModel with the fetched books
-      bookModel.setBooks(fetchedBooks);
+      bookModel.setLibraryBooks(fetchedLibraryBooks);
+      bookModel.setReadBooks(fetchedReadBooks);
     } catch (error) {
       print("Error fetching library: $error");
     }
@@ -126,6 +157,8 @@ class UserModel extends ChangeNotifier {
 
     // Fetch the list of Club IDs associated with the user
     fetchClubs(context);
+
+    fetchHighlightedPicks(context);
 
     // Update user latest login information
     updateUserData();
@@ -173,23 +206,91 @@ class UserModel extends ChangeNotifier {
 
   Future<void> fetchHighlightedPicks(BuildContext context) async {
     final picks = [
-      "https://covers.openlibrary.org/b/olid/OL28944960M-L.jpg",
-      "https://m.media-amazon.com/images/I/91aCox8y3rL._SL1500_.jpg",
-      "https://m.media-amazon.com/images/I/51IrW578SQL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51KHidbIlRL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51Ck0yr+jrL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51iCNetZNeL._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/519TilmNL+L._SY300_.jpg",
-      "https://m.media-amazon.com/images/I/51JwQT+XVCL._SY300_.jpg",
+      "9781847941831",
+      "9781668016138",
+      "9780385534260",
     ];
 
-    picks.forEach((element) {
-      highlightedPicks.add(Book(
-        coverImage: element,
-        title: "",
-        isbn: "",
-        author: '',
-      ));
+    // For each ISBN, fetch the book data (Library)
+    for (String isbn in picks) {
+      final response = await http.get(
+        Uri.parse(
+            'https://openlibrary.org/api/books?bibkeys=ISBN:$isbn&format=json&jscmd=data'),
+      );
+      if (response.statusCode == 200) {
+        var jsonData = json.decode(response.body);
+        var bookData = jsonData['ISBN:$isbn'];
+
+        String title = bookData['title'] ?? '';
+        String author = bookData['authors'] != null
+            ? bookData['authors'][0]['name']
+            : ''; // Assuming the first author in the list
+        bool bookExists = highlightedPicks.any((book) => book.isbn == isbn);
+        bool bookNotInLibrary = !(readBooks?.contains(isbn) ?? false) &&
+            !(library?.contains(isbn) ?? false);
+
+        if (!bookExists && bookNotInLibrary) {
+          highlightedPicks.add(Book(
+              isbn: isbn,
+              author: author,
+              title: title,
+              coverImage: 'https://covers.openlibrary.org/b/isbn/$isbn-L.jpg',
+              isRead: false));
+        }
+      } else {
+        print("Failed to fetch book with ISBN: $isbn");
+      }
+    }
+  }
+
+  void markRead(String isbn) async {
+    var userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .get();
+
+    var lib = List<String>.from(userDoc.data()?['lib'] ?? []);
+    var readBooks = List<String>.from(userDoc.data()?['readBooks'] ?? []);
+
+    if (lib.contains(isbn)) {
+      lib.remove(isbn);
+      readBooks.add(isbn);
+    } else if (readBooks.contains(isbn)) {
+      readBooks.remove(isbn);
+      lib.add(isbn);
+    }
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .update({
+      'lib': lib,
+      'readBooks': readBooks,
     });
+    library = lib;
+    readBooks = readBooks;
+    notifyListeners();
+  }
+
+  void addToLibrary(String isbn) async {
+    var userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .get();
+
+    var lib = List<String>.from(userDoc.data()?['lib'] ?? []);
+
+    if (!lib.contains(isbn)) {
+      lib.insert(0, isbn);
+    }
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .update({
+      'lib': lib,
+    });
+    library = lib;
+    notifyListeners();
   }
 }
