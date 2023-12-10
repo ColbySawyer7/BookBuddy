@@ -300,9 +300,12 @@ class UserModel extends ChangeNotifier {
         .get();
 
     var lib = List<String>.from(userDoc.data()?['lib'] ?? []);
+    var readBooks = List<String>.from(userDoc.data()?['readBooks'] ?? []);
 
     if (lib.contains(isbn)) {
       lib.remove(isbn);
+    } else if (readBooks.contains(isbn)) {
+      readBooks.remove(isbn);
     }
 
     await FirebaseFirestore.instance
@@ -310,8 +313,10 @@ class UserModel extends ChangeNotifier {
         .doc(_firebaseUser?.uid)
         .update({
       'lib': lib,
+      'readBooks': readBooks,
     });
     library = lib;
+    readBooks = readBooks;
     updateUI();
   }
 
@@ -327,15 +332,18 @@ class UserModel extends ChangeNotifier {
       members: [user],
     );
     // Create Club Document
-    await FirebaseFirestore.instance.collection('clubs').add(club.toMap(user));
-
+    var docRef = await FirebaseFirestore.instance
+        .collection('clubs')
+        .add(club.toMap(user));
+    var docId = docRef.id;
+    print("Created club with ID: $docId");
     // Add Club to User Data
     clubs.add(club);
     await FirebaseFirestore.instance
         .collection('users')
         .doc(_firebaseUser?.uid)
         .update({
-      'joinedClubs': FieldValue.arrayUnion([club.id]),
+      'joinedClubs': FieldValue.arrayUnion([docId]),
     });
 
     updateUI();
