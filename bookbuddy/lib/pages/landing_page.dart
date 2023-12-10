@@ -162,6 +162,7 @@ class _LandingPageState extends State<LandingPage> {
                                 imageURL: library[index].coverImage,
                                 isRead: library[index].isRead,
                                 isbn: library[index].isbn,
+                                canBeRemoved: true,
                               ),
                               SizedBox(height: 6),
                               Expanded(

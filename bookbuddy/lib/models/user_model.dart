@@ -32,19 +32,26 @@ class UserModel extends ChangeNotifier {
   final _dataCompleter = Completer<void>();
   Future<void> get dataReady => _dataCompleter.future;
 
+  void updateUI() {
+    if (!_dataCompleter.isCompleted) {
+      _dataCompleter.complete();
+    }
+    notifyListeners();
+  }
+
   void updateName(String newName) {
     name = newName;
-    notifyListeners();
+    updateUI();
   }
 
   void updateEmail(String newEmail) {
     email = newEmail;
-    notifyListeners();
+    updateUI();
   }
 
   void updateBio(String newBio) {
     bio = newBio;
-    notifyListeners();
+    updateUI();
   }
 
   void updateLibrary(String isbn) async {
@@ -54,7 +61,7 @@ class UserModel extends ChangeNotifier {
         .update({
       'lib': FieldValue.arrayUnion([isbn]),
     });
-    notifyListeners();
+    updateUI();
   }
 
   void updateUserData() async {
@@ -162,13 +169,7 @@ class UserModel extends ChangeNotifier {
 
     // Update user latest login information
     updateUserData();
-    // Notify listeners of the changes
-    notifyListeners();
-
-    // Once everything is set:
-    if (!_dataCompleter.isCompleted) {
-      _dataCompleter.complete();
-    }
+    updateUI();
   }
 
   Future<void> fetchClubs(BuildContext context) async {
@@ -197,8 +198,6 @@ class UserModel extends ChangeNotifier {
           print("Club with ID $clubID already exists in the 'clubs' list.");
         }
       });
-
-      notifyListeners();
     } catch (error) {
       print("Error fetching club IDs: $error");
     }
@@ -269,7 +268,7 @@ class UserModel extends ChangeNotifier {
     });
     library = lib;
     readBooks = readBooks;
-    notifyListeners();
+    updateUI();
   }
 
   void addToLibrary(String isbn) async {
@@ -291,6 +290,41 @@ class UserModel extends ChangeNotifier {
       'lib': lib,
     });
     library = lib;
-    notifyListeners();
+    updateUI();
+  }
+
+  void removeFromLibrary(String isbn) async {
+    var userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .get();
+
+    var lib = List<String>.from(userDoc.data()?['lib'] ?? []);
+
+    if (lib.contains(isbn)) {
+      lib.remove(isbn);
+    }
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .update({
+      'lib': lib,
+    });
+    library = lib;
+    updateUI();
+  }
+
+  void addClub(Club club) async {
+    clubs.add(club);
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .update({
+      'joinedClubs': FieldValue.arrayUnion([club.id]),
+    });
+
+    updateUI();
   }
 }

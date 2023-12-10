@@ -9,13 +9,15 @@ class BookWidget extends StatefulWidget {
   final String isbn;
   final bool isRead; // Property to track read status
   final bool canBeRead; // Property to track if book can be read
+  final bool canBeRemoved; // Property to track if book can be removed
 
   BookWidget(
       {Key? key,
       required this.imageURL,
       required this.isbn,
       required this.isRead,
-      this.canBeRead = true})
+      this.canBeRead = true,
+      this.canBeRemoved = false})
       : super(key: key);
 
   @override
@@ -100,6 +102,27 @@ class _BookWidgetState extends State<BookWidget> {
                     ),
                   ),
                 ),
+          widget.canBeRemoved
+              ? Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () {
+                      // Call function to add book to Firebase
+                      print("Removing ISBN from library: ${widget.isbn}");
+                      userModel.removeFromLibrary(widget.isbn);
+                      setState(() {});
+                    },
+                    child: Container(
+                      color: Colors.red,
+                      child: Icon(
+                        Icons.remove,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                )
+              : Container(),
         ],
       ),
     );
