@@ -315,9 +315,22 @@ class UserModel extends ChangeNotifier {
     updateUI();
   }
 
-  void addClub(Club club) async {
-    clubs.add(club);
+  void addClub(String name, String genre, String theme) async {
+    final user = _firebaseUser!.uid;
+    //Create Club Document
+    final club = Club(
+      id: '',
+      books: [],
+      name: name,
+      genre: genre,
+      theme: theme,
+      members: [user],
+    );
+    // Create Club Document
+    await FirebaseFirestore.instance.collection('clubs').add(club.toMap(user));
 
+    // Add Club to User Data
+    clubs.add(club);
     await FirebaseFirestore.instance
         .collection('users')
         .doc(_firebaseUser?.uid)

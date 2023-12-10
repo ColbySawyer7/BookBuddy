@@ -18,6 +18,17 @@ class Club {
     required this.theme,
   });
 
+  Map<String, dynamic> toMap(admin) {
+    return {
+      'name': name,
+      'genre': genre,
+      'members': members,
+      'books': books,
+      'theme': theme,
+      'admin': admin,
+    };
+  }
+
   static Future<Club?> fetchClub(String clubID) async {
     // Fetch club by ID from Firestore
     try {
