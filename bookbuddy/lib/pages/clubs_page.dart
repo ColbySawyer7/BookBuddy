@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:bookbuddy/models/user_model.dart';
 import 'package:bookbuddy/components/club.dart';
@@ -11,7 +12,16 @@ class ClubsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Clubs'),
+        title: Text('Your Clubs'),
+        forceMaterialTransparency: true,
+        shadowColor: Colors.transparent,
+        foregroundColor: Colors.black,
+        /*actions: [
+            IconButton(
+              icon: FaIcon(FontAwesomeIcons.plus),
+              onPressed: () {},
+            ),
+          ]*/
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

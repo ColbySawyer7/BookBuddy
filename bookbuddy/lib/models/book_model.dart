@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Book {
@@ -14,6 +16,9 @@ class Book {
 }
 
 class BookModel with ChangeNotifier {
+  User? _firebaseUser;
+
+  User? get firebaseUser => _firebaseUser;
   List<Book> _currentlyReading = [];
   List<Book> _recommendations = [];
   List<Book> _clubBooks = [];

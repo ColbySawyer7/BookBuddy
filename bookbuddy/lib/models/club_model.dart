@@ -18,24 +18,51 @@ class Club {
     required this.theme,
   });
 
-  static Future<Club> fetchClub(String clubID) async {
+  static Future<Club?> fetchClub(String clubID) async {
     // Fetch club by ID from Firestore
-    var clubDoc =
-        await FirebaseFirestore.instance.collection('clubs').doc(clubID).get();
+    try {
+      var clubDoc = await FirebaseFirestore.instance
+          .collection('clubs')
+          .doc(clubID)
+          .get();
 
-    final name = clubDoc.data()?['name'] ?? '';
-    final theme = clubDoc.data()?['theme'] ?? '';
-    final genre = clubDoc.data()?['genre'] ?? '';
-    final members = List<String>.from(clubDoc.data()?['members'] ?? []);
-    final books = List<String>.from(clubDoc.data()?['books'] ?? []);
+      if (clubDoc.exists) {
+        // Club document exists, you can access its data
+        final name = clubDoc.data()?['name'] ?? '';
+        print("Fetched club name: $name");
+        final theme = clubDoc.data()?['theme'] ?? '';
+        final genre = clubDoc.data()?['genre'] ?? '';
+        final members = List<String>.from(clubDoc.data()?['members'] ?? []);
+        final books = List<String>.from(clubDoc.data()?['books'] ?? []);
 
-    return Club(
-      id: clubID,
-      name: name,
-      theme: theme,
-      genre: genre,
-      members: members,
-      books: books,
-    );
+        return Club(
+          id: clubID,
+          name: name,
+          theme: theme,
+          genre: genre,
+          members: members,
+          books: books,
+        );
+      } else {
+        // Club document doesn't exist
+        print('Club document not found for ID: $clubID');
+      }
+    } catch (e) {
+      // Handle any errors that occur during the fetch
+      print('Error fetching club document: $e');
+    }
+  }
+
+  static Future<void> addClub(Club club) async {
+    // Add club to Firestore
+    try {
+      await FirebaseFirestore.instance
+          .collection('clubs')
+          .doc()
+          .set({'name': 'My Club'});
+    } catch (e) {
+      // Handle any errors that occur during the add
+      print('Error adding club document: $e');
+    }
   }
 }

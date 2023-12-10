@@ -26,9 +26,35 @@ class UserModel extends ChangeNotifier {
   List<String>? library;
   List<String>? clubIDs = [];
   List<Club> clubs = [];
+  List<Book> highlightedPicks = [];
 
   final _dataCompleter = Completer<void>();
   Future<void> get dataReady => _dataCompleter.future;
+
+  void updateName(String newName) {
+    name = newName;
+    notifyListeners();
+  }
+
+  void updateEmail(String newEmail) {
+    email = newEmail;
+    notifyListeners();
+  }
+
+  void updateBio(String newBio) {
+    bio = newBio;
+    notifyListeners();
+  }
+
+  void updateLibrary(String isbn) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_firebaseUser?.uid)
+        .update({
+      'lib': FieldValue.arrayUnion([isbn]),
+    });
+    notifyListeners();
+  }
 
   void updateUserData() async {
     // Update the lastLogin field with the current datetime
@@ -120,15 +146,50 @@ class UserModel extends ChangeNotifier {
           .get();
 
       clubIDs = List<String>.from(userDoc.data()?['joinedClubs'] ?? []);
+      print("Fetched club IDs: $clubIDs");
 
-      clubIDs?.forEach((clubID) async {
-        final club = await Club.fetchClub(clubID);
-        clubs.add(club);
+      clubIDs!.forEach((clubID) async {
+        print("Fetching club with ID: $clubID");
+
+        // Check if the club with the same ID already exists in the 'clubs' list
+        bool clubExists = clubs.any((club) => club.id == clubID);
+
+        if (!clubExists) {
+          final club = await Club.fetchClub(clubID);
+          if (club != null) {
+            print("Fetched club: ${club.name}");
+            clubs.add(club);
+          }
+        } else {
+          print("Club with ID $clubID already exists in the 'clubs' list.");
+        }
       });
 
       notifyListeners();
     } catch (error) {
       print("Error fetching club IDs: $error");
     }
+  }
+
+  Future<void> fetchHighlightedPicks(BuildContext context) async {
+    final picks = [
+      "https://covers.openlibrary.org/b/olid/OL28944960M-L.jpg",
+      "https://m.media-amazon.com/images/I/91aCox8y3rL._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/51IrW578SQL._SY300_.jpg",
+      "https://m.media-amazon.com/images/I/51KHidbIlRL._SY300_.jpg",
+      "https://m.media-amazon.com/images/I/51Ck0yr+jrL._SY300_.jpg",
+      "https://m.media-amazon.com/images/I/51iCNetZNeL._SY300_.jpg",
+      "https://m.media-amazon.com/images/I/519TilmNL+L._SY300_.jpg",
+      "https://m.media-amazon.com/images/I/51JwQT+XVCL._SY300_.jpg",
+    ];
+
+    picks.forEach((element) {
+      highlightedPicks.add(Book(
+        coverImage: element,
+        title: "",
+        isbn: "",
+        author: '',
+      ));
+    });
   }
 }
