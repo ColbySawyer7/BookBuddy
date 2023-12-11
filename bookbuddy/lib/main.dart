@@ -21,6 +21,7 @@ void main() async {
   );
   FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterError;
+  analytics.logAppOpen();
   runApp(const MyApp());
 }
 
